@@ -1,0 +1,16 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+reports/
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# Local, private tooling files
+CLAUDE.md
+CLAUDE.local.md
+.claude/
