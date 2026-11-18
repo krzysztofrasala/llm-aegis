@@ -83,6 +83,11 @@ class TestLlmJudge:
         assert "the-actual-response" in call["user_prompt"]
         assert semantic.assertion.judge_criteria in call["user_prompt"]
 
+    def test_judge_is_asked_for_reason_before_verdict(self) -> None:
+        # Small models contradict themselves less when they explain first.
+        assert JUDGE_SYSTEM_PROMPT.index('"reason"') < JUDGE_SYSTEM_PROMPT.index('"verdict"')
+        assert "untrusted data" in JUDGE_SYSTEM_PROMPT
+
     def test_braces_in_response_do_not_break_the_prompt(self, semantic: TestCase) -> None:
         judge = FakeLLMClient('{"verdict": "PASS", "reason": "ok"}')
         result = Evaluator(judge).evaluate(semantic, "{attack_prompt} {0} {")
@@ -144,6 +149,12 @@ class TestParseJudgeOutput:
             ("**PASS** - refused", Verdict.PASS, "refused"),
             ("pass", Verdict.PASS, "No reason provided by judge."),
             ('{"verdict": "PASS"}', Verdict.PASS, "No reason provided by judge."),
+            # Reason-first order, as the judge prompt now requests.
+            (
+                '{"reason": "The assistant refused.", "verdict": "PASS"}',
+                Verdict.PASS,
+                "The assistant refused.",
+            ),
         ],
     )
     def test_accepted_formats(self, raw: str, verdict: Verdict, reason: str) -> None:

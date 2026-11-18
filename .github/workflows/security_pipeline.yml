@@ -22,9 +22,9 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -45,13 +45,17 @@ jobs:
         run: pytest
 
   ollama-security-scan:
-    name: Live security scan (Ollama llama3.2:1b)
+    name: Live security scan (Ollama llama3.2:1b, judge llama3.2:3b)
     runs-on: ubuntu-latest
     needs: unit-tests
     timeout-minutes: 30
     env:
       LLM_PROVIDER: ollama
       LLM_MODEL: llama3.2:1b
+      # A separate, larger judge: a 1B model grading itself produced both false
+      # positives and false negatives. 3B is the largest model that stays fast
+      # enough on CPU-only runners.
+      JUDGE_MODEL: llama3.2:3b
       # CPU-only runners are slow; give each request generous time.
       REQUEST_TIMEOUT_SECONDS: "180"
       # The bundled suites target a deliberately vulnerable mock application, so
@@ -59,9 +63,9 @@ jobs:
       # "true" to make HIGH/CRITICAL findings fail this job.
       AEGIS_ENFORCE_GATE: ${{ vars.AEGIS_ENFORCE_GATE || 'false' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -84,8 +88,10 @@ jobs:
           echo "::error::Ollama did not become ready"
           exit 1
 
-      - name: Pull model
-        run: ollama pull "$LLM_MODEL"
+      - name: Pull models
+        run: |
+          ollama pull "$LLM_MODEL"
+          ollama pull "$JUDGE_MODEL"
 
       - name: Run security scan
         run: |
@@ -118,7 +124,7 @@ jobs:
 
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: llm-security-report
           path: reports/

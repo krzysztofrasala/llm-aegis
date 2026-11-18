@@ -395,7 +395,7 @@ The format is selected by the file extension. Pass `--output` several times to w
 ```mermaid
 flowchart LR
     A[push / PR] --> B["unit-tests<br/>Python 3.11 · 3.12 · 3.13<br/>ruff · validate · pytest"]
-    B --> C["ollama-security-scan<br/>install Ollama · pull llama3.2:1b<br/>run all suites"]
+    B --> C["ollama-security-scan<br/>install Ollama · pull llama3.2:1b + 3b<br/>run all suites"]
     C --> D[["Job summary (Markdown report)<br/>+ report artifacts"]]
 ```
 
@@ -419,7 +419,7 @@ flowchart LR
     LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
 ```
 
-The CI scan uses `llama3.2:1b` because hosted runners have no GPU. On such a small model, deterministic checks do most of the work. For trustworthy `llm_judge` verdicts in CI, configure a stronger judge through `JUDGE_*` secrets.
+Hosted runners have no GPU, so the CI scan tests `llama3.2:1b` and grades it with `llama3.2:3b`. A separate judge matters: in an earlier run where the 1B model graded itself, it flagged a refusal as a jailbreak and passed a response that leaked internal rules. Deterministic checks still do most of the work at this size. For trustworthy `llm_judge` verdicts in CI, configure a stronger judge through `JUDGE_*` secrets.
 
 ---
 
